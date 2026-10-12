@@ -1,0 +1,43 @@
+# Business rules confirmed by full-volume profiling of the lab data.
+# Rules marked "inferred" were derived from the data, not from documentation.
+
+status:
+  column: status
+  valid: [APPROVED]                  # only APPROVED reaches the data mart
+  excluded: [REJECTED, CANCELLED]
+
+customer_join:
+  # Key the pipeline uses to attach customers to sales.
+  fact_key: customer_key
+  master_key: customer_key
+  distributor_customer_id_prefix: CUST
+
+product:
+  source_column: product_code
+  prefix_map:                        # product_code prefix -> product_family
+    INS: INS
+    MF_: MF
+  category_map:                      # product_family -> product_category
+    INS: INSURANCE
+    MF: MUTUAL_FUND
+  insurance_family: INS
+  mutual_fund_family: MF
+  specific_fields:                   # observed on every APPROVED row
+    INS:
+      required: [premium_amount, sum_assured]
+      must_be_blank: [units_allocated, nav_at_purchase, folio_number]
+    MF:
+      required: [units_allocated, nav_at_purchase, folio_number]
+      must_be_blank: [premium_amount, sum_assured]
+
+calculations:
+  high_value_threshold: 100000       # inferred: is_high_value_flag = Y when gross >= this
+  max_discount_pct_of_gross: 5       # inferred: discount never above 5% of gross
+  expected_txn_count: 1
+
+customer:
+  kyc_verified_value: VERIFIED
+  active_value: Y
+  age_reference_column: sale_date    # inferred: age at the date of sale
+
+flag_values: [Y, N]

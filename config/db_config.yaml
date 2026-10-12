@@ -1,0 +1,18 @@
+# MySQL connection settings for the Python Project 2 lab.
+# The password is never stored here. It is read from the environment
+# variable named in password_env. Any value can be overridden with the
+# environment variables shown in the comments.
+mysql:
+  host: 127.0.0.1              # P2_DB_HOST
+  port: 3306                   # P2_DB_PORT
+  database: python_project2    # P2_DB_NAME
+  user: python_p2_learner      # P2_DB_USER
+  password_env: P2_DB_PASSWORD
+  connect_timeout: 15
+
+# Logical name -> physical table name (lowercase, as found in the lab).
+tables:
+  customer_master: dim_customer_master
+  distributor_sales: dim_distributor_sales
+  fact_sales: fact_sales
+  customer_360: dm_distributor_sales_customer_360

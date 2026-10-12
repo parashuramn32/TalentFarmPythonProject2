@@ -1,0 +1,253 @@
+# Structural validation rules: file locations, schemas, keys, mandatory
+# fields, allowed values, tolerances and column mappings.
+
+paths:
+  input_dir: C:/qa-lab/python-project-2/input   # P2_INPUT_DIR overrides
+  output_dir: output
+
+sources:
+  customer_master:
+    file: dim_Customer_Master_50k.txt
+    format: delimited
+    delimiter: ","
+    encoding: utf-8-sig
+    key: customer_key
+  distributor_sales:
+    file: dim_Distributor_sales_50k.json
+    format: json
+    encoding: utf-8-sig
+    key: distributor_txn_id
+  fact_sales:
+    file: Fact_Sales_50k_CSV.csv
+    format: delimited
+    delimiter: ","
+    encoding: utf-8-sig
+    key: distributor_txn_id
+
+# Column types drive comparison:
+#   int, bigint             exact numeric
+#   decimal2 / 3 / 4        numeric within the money / percentage / quantity tolerance
+#   date, datetime          compared as calendar date / to the minute
+#   text                    trimmed string, blanks treated as null
+schemas:
+  customer_master:
+    customer_key: int
+    customer_id: text
+    customer_pan: text
+    policy_number: text
+    first_name: text
+    last_name: text
+    gender: text
+    date_of_birth: date
+    email: text
+    mobile: text
+    address_line: text
+    city: text
+    state: text
+    pincode: text
+    country: text
+    kyc_status: text
+    customer_segment: text
+    annual_income: decimal2
+    onboarded_on: date
+    active_flag: text
+    created_at: datetime
+    updated_at: datetime
+  distributor_sales:
+    distributor_txn_id: text
+    sale_date: date
+    distributor_code: text
+    distributor_name: text
+    customer_id: text
+    customer_pan: text
+    product_code: text
+    product_name_raw: text
+    product_type_raw: text
+    policy_number: text
+    folio_number: text
+    gross_amount: decimal2
+    commission_amount: decimal2
+    region_code: text
+    status: text
+    created_at: datetime
+    updated_at: datetime
+  fact_sales:
+    sales_sk: bigint
+    distributor_txn_id: text
+    sale_date_key: int
+    distributor_key: int
+    product_key: int
+    customer_key: int
+    region_key: int
+    gross_amount: decimal2
+    net_amount: decimal2
+    commission_amount: decimal2
+    tax_amount: decimal2
+    discount_amount: decimal2
+    premium_amount: decimal2
+    sum_assured: decimal2
+    units_allocated: decimal4
+    nav_at_purchase: decimal4
+    commission_pct: decimal3
+    txn_count: int
+    is_new_customer_flag: text
+    is_high_value_flag: text
+    policy_number: text
+    folio_number: text
+    status: text
+    src_created_at: datetime
+    src_updated_at: datetime
+    etl_run_id: text
+    etl_load_ts_utc: datetime
+  customer_360:
+    dm_sk: bigint
+    sales_sk: bigint
+    distributor_txn_id: text
+    policy_number: text
+    customer_key: int
+    customer_id: text
+    sale_date: date
+    sale_date_key: int
+    distributor_code: text
+    distributor_name: text
+    product_code: text
+    product_name_raw: text
+    product_type_raw: text
+    product_family: text
+    product_category: text
+    folio_number: text
+    region_code: text
+    region_key: int
+    status: text
+    customer_pan: text
+    first_name: text
+    last_name: text
+    gender: text
+    date_of_birth: date
+    customer_age: int
+    email: text
+    mobile: text
+    city: text
+    state: text
+    pincode: text
+    country: text
+    kyc_status: text
+    customer_segment: text
+    annual_income: decimal2
+    customer_onboarded_on: date
+    customer_active_flag: text
+    gross_amount: decimal2
+    net_amount: decimal2
+    commission_amount: decimal2
+    tax_amount: decimal2
+    discount_amount: decimal2
+    premium_amount: decimal2
+    sum_assured: decimal2
+    units_allocated: decimal4
+    nav_at_purchase: decimal4
+    commission_pct: decimal3
+    txn_count: int
+    is_new_customer_flag: text
+    is_high_value_flag: text
+    is_kyc_verified_flag: text
+    is_ins_txn_flag: text
+    is_mf_txn_flag: text
+    src_created_at: datetime
+    src_updated_at: datetime
+    fact_etl_run_id: text
+    dm_etl_run_id: text
+    dm_load_ts_utc: datetime
+
+mandatory_fields:
+  customer_master: [customer_key, customer_id, customer_pan, policy_number, first_name,
+                    last_name, date_of_birth, kyc_status, active_flag]
+  distributor_sales: [distributor_txn_id, sale_date, distributor_code, product_code,
+                      policy_number, gross_amount, commission_amount, status]
+  fact_sales: [sales_sk, distributor_txn_id, sale_date_key, customer_key, gross_amount,
+               net_amount, commission_amount, status, etl_run_id]
+
+# Allowed values seen during profiling. Review after the first full run:
+# an unexpected value is reported with the value itself in the remarks.
+allowed_values:
+  customer_master:
+    gender: [M, F, O]
+    kyc_status: [VERIFIED, PENDING, REJECTED, EXPIRED]
+    customer_segment: [HNI, CORPORATE, RETAIL, PREMIUM]
+    active_flag: [Y, N]
+  distributor_sales:
+    status: [APPROVED, REJECTED, CANCELLED]
+  fact_sales:
+    status: [APPROVED, REJECTED, CANCELLED]
+    is_new_customer_flag: [Y, N]
+    is_high_value_flag: [Y, N]
+
+tolerances:
+  decimal2: 0.01
+  decimal3: 0.001
+  decimal4: 0.0001
+
+date_formats:
+  - "%Y-%m-%d %H:%M:%S"
+  - "%Y-%m-%d %H:%M"
+  - "%Y-%m-%d"
+  - "%m/%d/%Y %H:%M:%S"
+  - "%m/%d/%Y %H:%M"
+  - "%m/%d/%Y"
+
+# Target column -> source column, checked with the target joined to the
+# source on distributor_txn_id.
+mappings:
+  fact_to_target:
+    sales_sk: sales_sk
+    policy_number: policy_number
+    folio_number: folio_number
+    sale_date_key: sale_date_key
+    region_key: region_key
+    gross_amount: gross_amount
+    net_amount: net_amount
+    commission_amount: commission_amount
+    tax_amount: tax_amount
+    discount_amount: discount_amount
+    premium_amount: premium_amount
+    sum_assured: sum_assured
+    units_allocated: units_allocated
+    nav_at_purchase: nav_at_purchase
+    commission_pct: commission_pct
+    txn_count: txn_count
+    is_new_customer_flag: is_new_customer_flag
+    is_high_value_flag: is_high_value_flag
+    src_created_at: src_created_at
+    src_updated_at: src_updated_at
+    fact_etl_run_id: etl_run_id
+  distributor_to_target:
+    sale_date: sale_date
+    distributor_code: distributor_code
+    distributor_name: distributor_name
+    product_code: product_code
+    product_name_raw: product_name_raw
+    product_type_raw: product_type_raw
+    region_code: region_code
+    status: status
+    customer_id: customer_id
+    policy_number: policy_number
+    folio_number: folio_number
+  master_to_target:
+    customer_pan: customer_pan
+    first_name: first_name
+    last_name: last_name
+    gender: gender
+    date_of_birth: date_of_birth
+    email: email
+    mobile: mobile
+    city: city
+    state: state
+    pincode: pincode
+    country: country
+    kyc_status: kyc_status
+    customer_segment: customer_segment
+    annual_income: annual_income
+    customer_onboarded_on: onboarded_on
+    customer_active_flag: active_flag
+
+output:
+  max_mismatch_rows_per_check: 100
